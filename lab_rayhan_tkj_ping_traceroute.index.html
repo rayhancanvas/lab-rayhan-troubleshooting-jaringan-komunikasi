@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lab Rayhan TKJ | Simulasi Ping & Traceroute</title>
+<style>
+:root{
+  --bg:#0b1020;--panel:#111a2e;--panel2:#0d1527;--line:#263653;
+  --text:#e8eefc;--muted:#91a2c2;--cyan:#39d6e8;--green:#4ade80;
+  --red:#fb7185;--yellow:#fbbf24;--purple:#a78bfa;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 15% 0%,#17264a 0,#0b1020 42%);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{padding:22px clamp(16px,4vw,44px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:16px;background:#0b1020cc}
+.brand{display:flex;gap:13px;align-items:center}.logo{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),#4978ff);display:grid;place-items:center;color:#061326;font-weight:900;font-size:21px;box-shadow:0 8px 30px #39d6e833}
+h1{font-size:clamp(18px,2.5vw,25px);margin:0;letter-spacing:.2px}.subtitle{color:var(--muted);font-size:13px;margin-top:3px}
+.pill{border:1px solid #246b69;color:#75f0ce;background:#0d302f;padding:7px 12px;border-radius:999px;font-size:12px;white-space:nowrap}
+main{max-width:1500px;margin:auto;padding:24px clamp(14px,3vw,36px) 40px}
+.intro{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:20px}.intro h2{margin:0 0 5px;font-size:22px}.intro p{margin:0;color:var(--muted);max-width:760px}
+.grid{display:grid;grid-template-columns:minmax(260px,.92fr) minmax(350px,1.35fr) minmax(280px,1fr);gap:16px;align-items:stretch}
+.panel{background:linear-gradient(180deg,#121d33,#0f1729);border:1px solid var(--line);border-radius:17px;overflow:hidden;min-width:0;box-shadow:0 12px 35px #0002}
+.panel-head{padding:15px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.panel-head h3{font-size:15px;margin:0}.eyebrow{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.panel-body{padding:16px}
+.terminal{background:#070d18;border:1px solid #24344e;border-radius:12px;overflow:hidden}
+.term-top{padding:9px 12px;background:#111d31;border-bottom:1px solid #24344e;display:flex;align-items:center;gap:6px;color:#9fb0ce;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#fb7185}.dot:nth-child(2){background:#fbbf24}.dot:nth-child(3){background:#4ade80}
+.term-output{height:330px;overflow:auto;padding:13px 12px;color:#c8d6ed;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+.term-line{margin:0 0 5px}.prompt{color:var(--green)}.cmd{color:#fff}.ok{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.info{color:var(--cyan)}
+.input-row{display:flex;gap:8px;margin-top:12px}.input-row input{min-width:0;flex:1;background:#080f1d;color:#fff;border:1px solid #304361;border-radius:10px;padding:12px;font:13px ui-monospace,monospace;outline:none}.input-row input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px #39d6e822}
+button{border:0;border-radius:10px;padding:10px 14px;background:var(--cyan);color:#06202a;font-weight:750;cursor:pointer;transition:.18s}button:hover{filter:brightness(1.12);transform:translateY(-1px)}button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.secondary{background:#233450;color:#dce8ff;border:1px solid #385071}.danger{background:#3b2030;color:#ffc4d0;border:1px solid #693448}
+.hints{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.hint{font:11px ui-monospace,monospace;background:#1a2942;color:#b9c9e6;border:1px solid #2c4164;border-radius:7px;padding:5px 8px;cursor:pointer}
+.note{font-size:11px;color:var(--muted);margin-top:12px}
+.topology-wrap{padding:16px;background:linear-gradient(180deg,#0d172a,#0b1323);border-radius:12px;border:1px solid #253753}
+.topology{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;align-items:center;position:relative;padding:30px 0 22px}
+.node{text-align:center;position:relative;z-index:2}.node-icon{width:62px;height:62px;margin:0 auto 9px;border-radius:17px;background:#162844;border:1px solid #365477;display:grid;place-items:center;font-size:28px;box-shadow:0 8px 24px #0003}
+.node strong{display:block;font-size:12px}.node small{display:block;color:var(--muted);font-size:10px;margin-top:3px}
+.link{height:3px;background:#344765;position:relative;top:-30px;margin:0 -5px;z-index:1;border-radius:10px}.link.active{background:var(--cyan);box-shadow:0 0 12px #39d6e8;animation:glow 1s infinite alternate}
+.packet{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 13px var(--cyan);position:absolute;top:-4px;left:0;display:none}
+.link.active .packet{display:block;animation:travel 1.1s linear infinite}
+@keyframes travel{from{left:0}to{left:calc(100% - 10px)}}@keyframes glow{from{opacity:.65}to{opacity:1}}
+.node.reached .node-icon{border-color:var(--green);box-shadow:0 0 18px #4ade8030}.node.current .node-icon{border-color:var(--cyan);box-shadow:0 0 20px #39d6e855;transform:translateY(-3px)}
+.topology-status{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;color:var(--muted);font-size:12px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:var(--muted)}.legend span{display:flex;align-items:center;gap:6px}.swatch{width:8px;height:8px;border-radius:50%;background:var(--cyan)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:15px}.stat{padding:10px;background:#111e34;border:1px solid #263b5b;border-radius:10px}.stat label{display:block;color:var(--muted);font-size:10px}.stat strong{font-size:18px}
+.log{height:390px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.log-entry{padding:10px 11px;border:1px solid #2a3d5b;background:#0d1729;border-radius:10px;font:11px/1.6 ui-monospace,monospace}
+.log-entry.success{border-left:3px solid var(--green)}.log-entry.timeout{border-left:3px solid var(--red)}.log-entry.route{border-left:3px solid var(--cyan)}
+.log-entry .meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:10px;margin-bottom:3px}
+.statusbar{display:flex;align-items:center;gap:8px;padding:11px 13px;border-radius:10px;background:#14243a;border:1px solid #2b4665;margin-bottom:12px;font-size:12px}.status-light{width:9px;height:9px;border-radius:50%;background:var(--yellow);box-shadow:0 0 10px currentColor}
+.statusbar.connected .status-light{background:var(--green)}.statusbar.failed .status-light{background:var(--red)}
+.section-title{font-size:13px;margin:18px 0 8px}.table{width:100%;border-collapse:collapse;font-size:11px}.table th,.table td{text-align:left;padding:8px 5px;border-bottom:1px solid #263650}.table th{color:var(--muted);font-weight:600}
+.footer{text-align:center;color:#7183a3;font-size:11px;margin-top:22px}
+@media(max-width:1100px){.grid{grid-template-columns:1fr 1fr}.topology-panel{grid-column:1/-1;grid-row:1}.terminal-panel{grid-column:1}.log-panel{grid-column:2}.term-output{height:300px}}
+@media(max-width:700px){header{align-items:flex-start}.pill{display:none}.intro{display:block}.grid{grid-template-columns:1fr}.topology-panel,.terminal-panel,.log-panel{grid-column:auto;grid-row:auto}.term-output{height:260px}.log{height:280px}.node-icon{width:52px;height:52px;font-size:23px}.node strong{font-size:10px}.node small{font-size:9px}.stats{gap:5px}.stat strong{font-size:16px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">RT</div>
+    <div><h1>LAB RAYHAN TKJ</h1><div class="subtitle">Modul Simulasi CLI · Ping &amp; Packet Traceroute</div></div>
+  </div>
+  <div class="pill">● MODE PEMBELAJARAN · SIMULASI</div>
+</header>
+<main>
+  <div class="intro">
+    <div><h2>Modul Troubleshooting Koneksi Jaringan</h2><p>Praktik mengenali konektivitas menggunakan perintah <b>ping</b> dan menelusuri jalur paket menggunakan <b>tracert</b>.</p></div>
+  </div>
+
+  <div class="grid">
+    <section class="panel terminal-panel">
+      <div class="panel-head"><div><div class="eyebrow">01 · Command line</div><h3>Terminal CLI</h3></div><span class="eyebrow">CLIENT-PC</span></div>
+      <div class="panel-body">
+        <div class="terminal">
+          <div class="term-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:7px">rayhan@client: ~</span></div>
+          <div class="term-output" id="terminalOutput" aria-live="polite"><div class="term-line info">Lab Rayhan TKJ — Network Diagnostic Simulator</div><div class="term-line">Ketik <span class="ok">help</span> untuk melihat perintah.</div><div class="term-line">Contoh: <span class="cmd">ping 8.8.8.8</span> atau <span class="cmd">tracert 8.8.8.8</span></div><div class="term-line">-----------------------------------------------</div></div>
+        </div>
+        <form class="input-row" id="commandForm">
+          <input id="commandInput" type="text" placeholder="ping 8.8.8.8" autocomplete="off" spellcheck="false" aria-label="Masukkan perintah CLI">
+          <button type="submit">Jalankan</button>
+        </form>
+        <div class="hints">
+          <button class="hint" type="button" data-command="ping 8.8.8.8">ping 8.8.8.8</button>
+          <button class="hint" type="button" data-command="tracert 8.8.8.8">tracert 8.8.8.8</button>
+          <button class="hint" type="button" data-command="ping 192.168.1.99">uji timeout</button>
+          <button class="hint" type="button" data-command="help">help</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="secondary" id="clearBtn" type="button">Bersihkan terminal</button><button class="danger" id="resetBtn" type="button">Reset simulasi</button></div>
+        <p class="note">Alamat 192.168.1.99 disediakan sebagai contoh host yang tidak merespons.</p>
+      </div>
+    </section>
+
+    <section class="panel topology-panel">
+      <div class="panel-head"><div><div class="eyebrow">02 · Network map</div><h3>Animasi Topologi Jaringan</h3></div><span class="eyebrow">4 PERANGKAT</span></div>
+      <div class="panel-body">
+        <div class="topology-wrap">
+          <div class="topology" aria-label="Topologi PC Client ke Switch ke Router ke Server">
+            <div class="node" id="node0"><div class="node-icon">💻</div><strong>PC Client</strong><small>192.168.1.10</small></div>
+            <div class="node" id="node1"><div class="node-icon">🔀</div><strong>Switch</strong><small>Layer 2</small></div>
+            <div class="node" id="node2"><div class="node-icon">🌐</div><strong>Router</strong><small>192.168.1.1</small></div>
+            <div class="node" id="node3"><div class="node-icon">🖥️</div><strong>Server</strong><small>8.8.8.8</small></div>
+            <div class="link" id="link0"><i class="packet"></i></div><div class="link" id="link1"><i class="packet"></i></div><div class="link" id="link2"><i class="packet"></i></div>
+          </div>
+          <div class="topology-status"><span id="pathText">Jalur: belum ada pengujian</span><span id="packetText">Paket: idle</span></div>
+        </div>
+        <div class="legend"><span><i class="swatch"></i> Paket berjalan</span><span>🟢 Hop terjangkau</span><span>🔴 Gangguan / timeout</span></div>
+        <div class="stats">
+          <div class="stat"><label>RTT TERAKHIR</label><strong id="rttStat">— ms</strong></div>
+          <div class="stat"><label>HOP DITEMUKAN</label><strong id="hopStat">0 / 3</strong></div>
+          <div class="stat"><label>PACKET LOSS</label><strong id="lossStat">—%</strong></div>
+        </div>
+        <h4 class="section-title">Informasi topologi</h4>
+        <table class="table"><thead><tr><th>Perangkat</th><th>Peran</th><th>Alamat / Info</th></tr></thead><tbody>
+          <tr><td>PC Client</td><td>Pengirim</td><td>192.168.1.10</td></tr><tr><td>Switch</td><td>Forward frame</td><td>Layer 2</td></tr><tr><td>Router</td><td>Gateway</td><td>192.168.1.1</td></tr><tr><td>Server</td><td>Tujuan</td><td>8.8.8.8</td></tr>
+        </tbody></table>
+      </div>
+    </section>
+
+    <section class="panel log-panel">
+      <div class="panel-head"><div><div class="eyebrow">03 · ICMP monitor</div><h3>Log Respon &amp; Status Jalur</h3></div><span class="eyebrow" id="logCount">0 EVENT</span></div>
+      <div class="panel-body">
+        <div class="statusbar" id="connectionStatus"><i class="status-light"></i><span id="statusText">Menunggu pengujian koneksi</span></div>
+        <div class="log" id="logOutput" aria-live="polite">
+          <div class="log-entry route"><div class="meta"><span>SYSTEM</span><span>READY</span></div>Monitor ICMP siap. Jalankan perintah ping atau tracert dari terminal.</div>
+        </div>
+        <p class="note">TTL (Time To Live) membatasi umur paket. RTT (Round Trip Time) adalah waktu pergi-pulang paket dalam milidetik.</p>
+      </div>
+    </section>
+  </div>
+  <div class="footer">LAB RAYHAN TKJ · Modul pembelajaran troubleshooting jaringan · Simulasi lokal satu file HTML</div>
+</main>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const terminal = $('terminalOutput'), logs = $('logOutput'), input = $('commandInput');
+  let eventCount = 0, runToken = 0, busy = false;
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const stamp = () => new Date().toLocaleTimeString('id-ID');
+  function terminalLine(text, cls='') {
+    const div = document.createElement('div'); div.className = 'term-line ' + cls; div.textContent = text;
+    terminal.appendChild(div); terminal.scrollTop = terminal.scrollHeight;
+  }
+  function logEntry(title, message, type='route', meta='ICMP') {
+    eventCount++;
+    const div = document.createElement('div'); div.className = 'log-entry ' + type;
+    const top = document.createElement('div'); top.className = 'meta';
+    const a = document.createElement('span'); a.textContent = meta + ' · ' + title;
+    const b = document.createElement('span'); b.textContent = stamp();
+    const body = document.createElement('div'); body.textContent = message;
+    top.append(a,b); div.append(top,body); logs.appendChild(div); logs.scrollTop = logs.scrollHeight;
+    $('logCount').textContent = eventCount + ' EVENT';
+  }
+  function setStatus(text, state='') {
+    $('statusText').textContent = text; $('connectionStatus').className = 'statusbar ' + state;
+  }
+  function resetTopology() {
+    for(let i=0;i<4;i++) $('node'+i).className='node';
+    for(let i=0;i<3;i++) $('link'+i).className='link';
+    $('pathText').textContent='Jalur: belum ada pengujian'; $('packetText').textContent='Paket: idle';
+  }
+  function activateHop(index) {
+    $('node'+index).classList.add('current');
+    if(index>0) $('node'+(index-1)).classList.remove('current');
+    if(index>0) $('node'+(index-1)).classList.add('reached');
+    for(let i=0;i<3;i++) $('link'+i).className='link'+(i===index-1?' active':'');
+    $('pathText').textContent='Jalur: PC Client → Switch → Router → Server';
+    $('packetText').textContent='Paket: hop '+index+'/3';
+  }
+  function finishTopology(success=true) {
+    for(let i=0;i<4;i++) {$('node'+i).classList.remove('current'); if(success || i<3) $('node'+i).classList.add('reached');}
+    for(let i=0;i<3;i++) $('link'+i).className='link'+(success?' active':'');
+    $('packetText').textContent=success?'Paket: sampai tujuan':'Paket: gagal / timeout';
+  }
+  function validTarget(target) {
+    return /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/.test(target) || /^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(target);
+  }
+  function help() {
+    terminalLine('Perintah yang tersedia:','info');
+    terminalLine('  ping [ip_tujuan]     Menguji konektivitas host');
+    terminalLine('  tracert [ip_tujuan]  Menampilkan jalur hop ke tujuan');
+    terminalLine('  help                 Menampilkan bantuan');
+    terminalLine('Contoh: ping 8.8.8.8 | tracert 8.8.8.8');
+  }
+  async function ping(target, token) {
+    const unreachable = target === '192.168.1.99' || target === '203.0.113.99';
+    terminalLine('Pinging '+target+' with 32 bytes of data:','info');
+    setStatus('Mengirim paket ICMP ke '+target);
+    resetTopology();
+    const rtts = [18,22,16,25]; let received=0, total=4;
+    for(let i=0;i<4;i++){
+      if(token!==runToken)return;
+      activateHop(1); await wait(230);
+      activateHop(2); await wait(230);
+      activateHop(3); await wait(230);
+      if(unreachable && i>=1){
+        terminalLine('Request timed out.','bad');
+        logEntry('PING · SEQ '+(i+1),'Request Timed Out — tidak ada Echo Reply dari '+target,'timeout');
+      } else {
+        const rtt = rtts[i] + Math.floor(Math.random()*8); received++;
+        terminalLine('Reply from '+target+': bytes=32 time='+rtt+'ms TTL=56','ok');
+        logEntry('PING · SEQ '+(i+1),'Echo Reply · TTL=56 · RTT='+rtt+' ms · 32 bytes','success');
+        $('rttStat').textContent=rtt+' ms';
+      }
+      $('hopStat').textContent='3 / 3';
+      $('lossStat').textContent=Math.round((total-received)/total*100)+'%';
+      await wait(350);
+    }
+    if(token!==runToken)return;
+    finishTopology(!unreachable);
+    const loss=(total-received)/total*100;
+    terminalLine('','');
+    terminalLine('Ping statistics for '+target+':');
+    terminalLine('    Packets: Sent = 4, Received = '+received+', Lost = '+(total-received)+' ('+loss+'% loss)');
+    setStatus(unreachable?'Koneksi gagal · packet loss '+loss+'%':'Koneksi berhasil · host merespons',unreachable?'failed':'connected');
+    logEntry('RINGKASAN PING','Sent: 4 · Received: '+received+' · Lost: '+(total-received)+' ('+loss+'% loss)',unreachable?'timeout':'success','SUMMARY');
+  }
+  async function tracert(target, token) {
+    const unreachable = target === '192.168.1.99' || target === '203.0.113.99';
+    terminalLine('Tracing route to '+target+' over a maximum of 3 hops:','info');
+    setStatus('Menelusuri jalur paket ke '+target);
+    resetTopology();
+    const hops=[
+      {name:'Switch / LAN',ip:'192.168.1.1',rtt:2,ttl:1},
+      {name:'Router / Gateway',ip:'10.0.0.1',rtt:12,ttl:2},
+      {name:'Destination',ip:target,rtt:24,ttl:3}
+    ];
+    for(let i=0;i<3;i++){
+      if(token!==runToken)return;
+      activateHop(i+1); await wait(650);
+      if(unreachable && i===2){
+        terminalLine('  3     *        *        *     Request timed out.','bad');
+        logEntry('HOP 3 · TIMEOUT','TTL exceeded / tidak ada respons dari tujuan '+target,'timeout','TRACERT');
+      }else{
+        const h=hops[i]; const ms=h.rtt+Math.floor(Math.random()*5);
+        terminalLine('  '+(i+1)+'    '+ms+' ms    '+(ms+2)+' ms    '+(ms+4)+' ms    '+h.ip,'ok');
+        logEntry('HOP '+(i+1)+' · '+h.name,'TTL='+h.ttl+' · '+h.ip+' · RTT sekitar '+ms+' ms','route','TRACERT');
+        $('hopStat').textContent=(i+1)+' / 3'; $('rttStat').textContent=ms+' ms';
+      }
+      await wait(280);
+    }
+    if(token!==runToken)return;
+    finishTopology(!unreachable);
+    if(unreachable){
+      terminalLine('Trace complete: destination did not respond.','bad');
+      $('lossStat').textContent='33%'; setStatus('Jalur terdeteksi, tujuan tidak merespons','failed');
+    }else{
+      terminalLine('Trace complete.','ok'); $('lossStat').textContent='0%';
+      setStatus('Jalur berhasil ditemukan · 3 hop','connected');
+    }
+    logEntry('RINGKASAN TRACERT',unreachable?'3 hop diperiksa · tujuan timeout':'3 hop ditemukan · tujuan tercapai',unreachable?'timeout':'success','SUMMARY');
+  }
+  async function execute(raw) {
+    const command=raw.trim(); if(!command)return;
+    if(busy){terminalLine('Tunggu hingga simulasi sebelumnya selesai.','warn');return;}
+    terminalLine('rayhan@client:~$ '+command,'cmd');
+    const parts=command.split(/\s+/), action=parts[0].toLowerCase();
+    if(action==='help'){help();return;}
+    if((action!=='ping' && action!=='tracert') || parts.length!==2){
+      terminalLine('Perintah tidak dikenali. Gunakan: ping [ip_tujuan], tracert [ip_tujuan], atau help.','bad'); return;
+    }
+    const target=parts[1];
+    if(!validTarget(target)){terminalLine('Alamat tujuan tidak valid. Masukkan IPv4 atau nama domain, contoh 8.8.8.8.','bad');return;}
+    busy=true; document.querySelectorAll('button').forEach(b=>{if(!b.classList.contains('hint'))b.disabled=true;});
+    const token=++runToken;
+    try { await (action==='ping'?ping(target,token):tracert(target,token)); }
+    finally {busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}
+  }
+  $('commandForm').addEventListener('submit',e=>{e.preventDefault();const v=input.value;input.value='';execute(v);});
+  document.querySelectorAll('[data-command]').forEach(btn=>btn.addEventListener('click',()=>{input.value=btn.dataset.command;execute(input.value);input.value='';}));
+  $('clearBtn').addEventListener('click',()=>{terminal.innerHTML='';terminalLine('Terminal dibersihkan. Ketik help untuk bantuan.','info');});
+  $('resetBtn').addEventListener('click',()=>{
+    runToken++;busy=false;terminal.innerHTML='';logs.innerHTML='';eventCount=0;$('logCount').textContent='0 EVENT';
+    terminalLine('Simulasi direset. Ketik help untuk memulai.','info');
+    $('rttStat').textContent='— ms';$('hopStat').textContent='0 / 3';$('lossStat').textContent='—%';
+    setStatus('Menunggu pengujian koneksi');resetTopology();
+    document.querySelectorAll('button').forEach(b=>b.disabled=false);
+  });
+})();
+</script>
+</body>
+</html>
